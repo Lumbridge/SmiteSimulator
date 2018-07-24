@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,30 +18,34 @@ namespace SmiteSimulator
     {
         static void Main(string[] args)
         {
-            //EntityManager entityManager = new EntityManager();
-
-            //var entities = entityManager.CreateEntityList(typeof(God));
-
-            //var g1 = entityManager.CreateSingleEntity(typeof(God), new object[] { God.GodCount, 1500, "Hou Yi" }); // args id, hp, name
-            //var g2 = entityManager.CreateSingleEntity(typeof(God), new object[] { God.GodCount, 1500, "Xbalanque" }); // args id, hp, name
-
-            //entities.Add(g1);
-            //entities.Add(g2);
-
-            //g1.Attack(g2, new Ability("Ricochet", 8.0, 100.0, 1.2, God.DamageType.Physical));
-
             var s = new StatsGrabber();
 
             var godList = s.GetAllGodNames();
 
-            //foreach (var god in godList)
+            foreach (var god in godList)
+            {
+                try
+                {
+                    s.GetGodInfo(godList.First(x => x.GetName() == god.GetName()));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error loading {god.GetName()} - ({e.Message})");
+                }
+            }
+
+            using (Stream stream = new MemoryStream())
+            {
+                IFormatter formatter = new BinaryFormatter();
+
+                formatter.Serialize(stream, godList);
+                Console.WriteLine($"Loaded {godList.Count} gods and {stream.Length / 1024f} kilobytes of data.");
+            }
+            
+            //foreach (var god in godList.OrderByDescending(x => x.GetInhandBaseDamage()))
             //{
-            //    w(god.GetId() + " " + god.GetName());
+            //    w(god.GetName() + " " + god.GetInhandBaseDamage());
             //}
-
-            s.GetGodInfo(godList.First(x => x.GetName() == "Agni"));
-
-            godList.First(x=>x.GetName() == "Agni").Status();
 
             Console.ReadLine();
         }

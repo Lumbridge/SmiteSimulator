@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -10,17 +11,19 @@ using static SmiteSimulator.Helpers.ConsoleHelper;
 
 namespace SmiteSimulator.Classes
 {
+    [Serializable]
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     class God : IGod
     {
         // Global God Identifier (Incremented with every instantiated God)
         internal static int GodCount = 1;
         
         // God Meta Info
-        private int _id { get; set; }
         private string _name { get; set; }
         private string _title { get; set; }
         private string _pantheon { get; set; }
-        private string _inhandType { get; set; }
+        private string _inhandType1 { get; set; }
+        private string _inhandType2 { get; set; }
         private string _class { get; set; }
         private string _pros { get; set; }
         private string _difficulty { get; set; }
@@ -39,57 +42,31 @@ namespace SmiteSimulator.Classes
         private double _range { get; set; }
         private double _rangeIncreasePerLevel { get; set; }
         private double _attacksPerSecond { get; set; }
-        private double _attacksPerSecondIncreasePerLevel { get; set; }
+        private double _attacksPerSecondIncreasePerLevelPercent { get; set; }
 
         // Basic Attack Power Stats
         private double _inhandBaseDamage { get; set; }
         private double _inhandBaseDamageIncreasePerLevel { get; set; }
         private double _inhandScalingPercentage { get; set; }
-        private object _progression { get; set; } // e.g. basic attack chain erlang shen = { 0.75, 0.75, 0.75, 1.1, 0.9 }
+        private List<double> _progressionDamageScaling { get; set; } // e.g. basic attack chain erlang shen = { 0.75, 0.75, 0.75, 1.1, 0.9 }
+        private List<double> _progressionSpeedScaling { get; set; } // e.g. basic attack chain erlang shen = { 0.75, 0.75, 0.75, 1.1, 0.9 }
 
         // Protections Stats
         private double _physicalProtections { get; set; }
+        private double _physicalProtectionsIncreasePerLevel { get; set; }
         private double _magicalProtections { get; set; }
+        private double _magicalProtectionsIncreasePerLevel { get; set; }
 
         // Regen Stats
         private double _HP5 { get; set; }
+        private double _HP5IncreasePerLevel { get; set; }
         private double _MP5 { get; set; }
+        private double _MP5IncreasePerLevel { get; set; }
 
         // Constructors
         public God(string name)
         {
-            _id = GodCount;
             _name = name;
-
-            Interlocked.Increment(ref GodCount);
-        }
-        public God(
-            double health,
-            double mana,
-            double speed,
-            double range,
-            double attacksPerSecond,
-            double damage,
-            object progression,
-            double physicalProtections,
-            double magicalProtections,
-            double hp5,
-            double mp5)
-        {
-            _id = GodCount;
-            _health = health;
-            _mana = mana;
-            _speed = speed;
-            _range = range;
-            _attacksPerSecond = attacksPerSecond;
-            _inhandBaseDamage = damage;
-            _progression = progression;
-            _physicalProtections = physicalProtections;
-            _magicalProtections = magicalProtections;
-            _HP5 = hp5;
-            _MP5 = mp5;
-
-            Interlocked.Increment(ref GodCount);
         }
 
         // Deconstructor
@@ -99,10 +76,6 @@ namespace SmiteSimulator.Classes
         }
 
         // Meta Getters
-        public int GetId()
-        {
-            return _id;
-        }
         public string GetName()
         {
             return _name;
@@ -115,9 +88,13 @@ namespace SmiteSimulator.Classes
         {
             return _pantheon;
         }
-        public string GetInhandType()
+        public string GetInhandType1()
         {
-            return _inhandType;
+            return _inhandType1;
+        }
+        public string GetInhandType2()
+        {
+            return _inhandType2;
         }
         public string GetClass()
         {
@@ -149,10 +126,6 @@ namespace SmiteSimulator.Classes
         }
 
         // Meta Setters
-        public void SetId(int id)
-        {
-            _id = id;
-        }
         public void SetName(string name)
         {
             _name = name;
@@ -165,9 +138,13 @@ namespace SmiteSimulator.Classes
         {
             _pantheon = pantheon;
         }
-        public void SetInhandType(string inhandType)
+        public void SetInhandType1(string inhandType1)
         {
-            _inhandType = inhandType;
+            _inhandType1 = inhandType1;
+        }
+        public void SetInhandType2(string inhandType2)
+        {
+            _inhandType2 = inhandType2;
         }
         public void SetClass(string classType)
         {
@@ -235,9 +212,9 @@ namespace SmiteSimulator.Classes
         {
             return _attacksPerSecond;
         }
-        public double GetAttacksPerSecondIncreasePerLevel()
+        public double GetAttacksPerSecondIncreasePerLevelPercent()
         {
-            return _attacksPerSecondIncreasePerLevel;
+            return _attacksPerSecondIncreasePerLevelPercent;
         }
 
         // Base Stat Setters
@@ -277,9 +254,9 @@ namespace SmiteSimulator.Classes
         {
             _attacksPerSecond = attacksPerSecond;
         }
-        public void SetAttacksPerSecondIncreasePerLevel(double increase)
+        public void SetAttacksPerSecondIncreasePerLevelPercent(double increase)
         {
-            _attacksPerSecondIncreasePerLevel = increase;
+            _attacksPerSecondIncreasePerLevelPercent = increase;
         }
 
         // Basic Attack Stat Getters
@@ -291,9 +268,35 @@ namespace SmiteSimulator.Classes
         {
             return _inhandBaseDamageIncreasePerLevel;
         }
-        public object GetProgression()
+        public List<double> GetProgressionDamageScaling()
         {
-            return _progression;
+            return _progressionDamageScaling;
+        }
+        public List<double> GetProgressionSpeedScaling()
+        {
+            return _progressionSpeedScaling;
+        }
+        public string GetProgressionDamageScalingString()
+        {
+            string p = "";
+            for (var i = 0; i < _progressionDamageScaling.Count; i++)
+            {
+                p += $"{_progressionDamageScaling[i]}";
+                if (i + 1 != _progressionDamageScaling.Count)
+                    p += '/';
+            }
+            return p;
+        }
+        public string GetProgressionSpeedScalingString()
+        {
+            string p = "";
+            for (var i = 0; i < _progressionSpeedScaling.Count; i++)
+            {
+                p += $"{_progressionSpeedScaling[i]}";
+                if (i + 1 != _progressionSpeedScaling.Count)
+                    p += '/';
+            }
+            return p;
         }
         public double GetInhandScalingPercentage()
         {
@@ -309,9 +312,13 @@ namespace SmiteSimulator.Classes
         {
             _inhandBaseDamageIncreasePerLevel = increase;
         }
-        public void SetProgression(object progression)
+        public void SetProgressionDamageScaling(List<double> pScaling)
         {
-            _progression = progression;
+            _progressionDamageScaling = pScaling;
+        }
+        public void SetProgressionSpeedScaling(List<double> pScaling)
+        {
+            _progressionSpeedScaling = pScaling;
         }
         public void SetInhandScalingPercentage(double scaling)
         {
@@ -323,9 +330,17 @@ namespace SmiteSimulator.Classes
         {
             return _physicalProtections;
         }
+        public double GetPhysicalProtectionsIncreasePerLevel()
+        {
+            return _physicalProtectionsIncreasePerLevel;
+        }
         public double GetMagicalProtections()
         {
             return _magicalProtections;
+        }
+        public double GetMagicalProtectionsIncreasePerLevel()
+        {
+            return _magicalProtectionsIncreasePerLevel;
         }
 
         // Protections Stat Setters
@@ -333,9 +348,17 @@ namespace SmiteSimulator.Classes
         {
             _physicalProtections = physicalProtections;
         }
+        public void SetPhysicalProtectionsIncreasePerLevel(double increase)
+        {
+            _physicalProtectionsIncreasePerLevel = increase;
+        }
         public void SetMagicalProtections(double magicalProtections)
         {
             _magicalProtections = magicalProtections;
+        }
+        public void SetMagicalProtectionsIncreasePerLevel(double increase)
+        {
+            _magicalProtectionsIncreasePerLevel = increase;
         }
 
         // Regen Stat Getters
@@ -343,9 +366,17 @@ namespace SmiteSimulator.Classes
         {
             return _HP5;
         }
+        public double GetHP5IncreasePerLevel()
+        {
+            return _HP5IncreasePerLevel;
+        }
         public double GetMP5()
         {
             return _MP5;
+        }
+        public double GetMP5IncreasePerLevel()
+        {
+            return _MP5IncreasePerLevel;
         }
 
         // Regen Stat Setters
@@ -353,9 +384,17 @@ namespace SmiteSimulator.Classes
         {
             _HP5 = hp5;
         }
+        public void SetHP5IncreasePerLevel(double increase)
+        {
+            _HP5IncreasePerLevel = increase;
+        }
         public void SetMP5(double mp5)
         {
             _MP5 = mp5;
+        }
+        public void SetMP5IncreasePerLevel(double increase)
+        {
+            _MP5IncreasePerLevel = increase;
         }
 
         // Action Methods
@@ -364,7 +403,7 @@ namespace SmiteSimulator.Classes
             foreach (var m in this.GetType().GetMethods().Where(x => x.DeclaringType == typeof(God)))
             {
                 if (m.ReturnType != typeof(void) && m.ReturnType != typeof(IGod))
-                    Console.WriteLine(m.Name + ": " + m.Invoke(this, new object[] { }));
+                    Console.WriteLine(m.Name + ": " + m.Invoke(this, null));
             }
         }
         public bool IsAlive()
@@ -376,10 +415,6 @@ namespace SmiteSimulator.Classes
             var totalDmg = ability.BaseDamage + GetInhandBaseDamage() * ability.StatModifier;
             totalDmg -= enemy.GetPhysicalProtections();
             enemy.Damage(totalDmg);
-        }
-        public void Defend(IGod enemy, Ability ability)
-        {
-            throw new NotImplementedException();
         }
         public void Damage(double dmg)
         {

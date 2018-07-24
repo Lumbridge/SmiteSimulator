@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2015
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmiteSimulator", "..\SmiteSimulator.csproj", "{0BC8C02C-0393-4D31-BEBC-076BCB4C70D0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0BC8C02C-0393-4D31-BEBC-076BCB4C70D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BC8C02C-0393-4D31-BEBC-076BCB4C70D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BC8C02C-0393-4D31-BEBC-076BCB4C70D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BC8C02C-0393-4D31-BEBC-076BCB4C70D0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {554326CE-F304-4753-91C1-90FFD2DFC9A6}
+	EndGlobalSection
+EndGlobal
