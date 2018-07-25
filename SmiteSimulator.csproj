@@ -37,6 +37,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -45,14 +46,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\PercentageScalingStat.cs" />
+    <Compile Include="Classes\Stat.cs" />
     <Compile Include="Helpers\StatsGrabber.cs" />
+    <Compile Include="Classes\GodCollection.cs" />
+    <Compile Include="Interfaces\IStat.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes\Ability.cs" />
     <Compile Include="Helpers\ConsoleHelper.cs" />
     <Compile Include="Classes\EntityManager.cs" />
     <Compile Include="Classes\God.cs" />
-    <Compile Include="Interfaces\IGod.cs" />
+    <Compile Include="Interfaces\IEntity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

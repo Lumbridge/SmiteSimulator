@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Policy;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-
+using System.Web;
 using HtmlAgilityPack;
 using SmiteSimulator.Classes;
 using SmiteSimulator.Interfaces;
-using static SmiteSimulator.Helpers.ConsoleHelper;
 
 namespace SmiteSimulator.Helpers
 {
@@ -31,7 +32,7 @@ namespace SmiteSimulator.Helpers
             return doc;
         }
 
-        public List<IGod> GetAllGodNames()
+        public List<IEntity> GetAllGodNames()
         {
             EntityManager entityManager = new EntityManager();
             var godList = entityManager.CreateEntityList(typeof(God));
@@ -109,91 +110,115 @@ namespace SmiteSimulator.Helpers
             return new object[]{ new List<double>(){1.0}, new List<double>(){1.0} };
         }
 
-        public IGod GetGodInfo(IGod god)
+        public IEntity GetGodInfo(IEntity god)
         {
-            var doc = GetHtmlDocument("https://smite.gamepedia.com/" + god.GetName());
+            var godname = HttpUtility.UrlEncode(god.Name)?.Replace("+", "%20");
+            var doc = GetHtmlDocument("https://smite.gamepedia.com/" + godname);
 
             var nodes = doc.DocumentNode.SelectNodes("//table[contains(@class, 'infobox')]/tr/td");
 
             // title
-            god.SetTitle(nodes[1].InnerText.Trim());
+            god.Title = nodes[1].InnerText.Trim();
             // pantheon
-            god.SetPantheon(nodes[2].InnerText.Trim());
+            god.Pantheon = nodes[2].InnerText.Trim();
             // inhand type
-            god.SetInhandType1(nodes[3].InnerText.Trim().Split(',')[0]);
-            god.SetInhandType2(nodes[3].InnerText.Trim().Split(',')[1]);
+            god.InhandType1 = nodes[3].InnerText.Trim().Split(',')[0];
+            god.InhandType2 = nodes[3].InnerText.Trim().Split(',')[1];
             // class type
-            god.SetClass(nodes[4].InnerText.Trim());
+            god.Class = nodes[4].InnerText.Trim();
             // pros
-            god.SetPros(nodes[5].InnerText.Trim());
+            god.Pros = nodes[5].InnerText.Trim();
             // difficulty
-            god.SetDifficulty(nodes[6].InnerText.Trim());
+            god.Difficulty = nodes[6].InnerText.Trim();
             // release date
-            god.SetReleaseDate(nodes[7].InnerText.Trim());
+            god.ReleaseDate = nodes[7].InnerText.Trim();
             // favour cost
-            god.SetFavourCost(nodes[8].InnerText.Trim());
+            god.FavourCost = nodes[8].InnerText.Trim();
             // gem cost
-            god.SetGemCost(nodes[9].InnerText.Trim());
+            god.GemCost = nodes[9].InnerText.Trim();
             // voice actor
-            god.SetVoiceActor(nodes[11].InnerText.Trim());
+            god.VoiceActor = nodes[11].InnerText.Trim().Replace("\n",", ");
 
             // health + scaling
             var bands = BaseAndScaling(nodes[12].InnerText.Trim());
-            god.SetHealth(bands[0]);
-            god.SetHealthIncreasePerLevel(bands[1]);
+            god.Health.SetBaseAndScaling(bands);
 
             // mana + scaling
             bands = BaseAndScaling(nodes[13].InnerText.Trim());
-            god.SetMana(bands[0]);
-            god.SetManaIncreasePerLevel(bands[1]);
+            god.Mana.SetBaseAndScaling(bands);
 
             // speed + scaling
             bands = BaseAndScaling(nodes[14].InnerText.Trim());
-            god.SetSpeed(bands[0]);
-            god.SetSpeedIncreasePerLevel(bands[1]);
+            god.Speed.SetBaseAndScaling(bands);
 
             // range + scaling
             bands = BaseAndScaling(nodes[15].InnerText.Trim());
-            god.SetRange(bands[0]);
-            god.SetRangeIncreasePerLevel(bands[1]);
+            god.Range.SetBaseAndScaling(bands);
 
             // attack speed + scaling
             bands = BaseAndScaling(nodes[16].InnerText.Trim());
-            god.SetAttacksPerSecond(bands[0]);
-            god.SetAttacksPerSecondIncreasePerLevelPercent(bands[1]);
+            god.AttacksPerSecond.SetBaseAndScaling(bands);
 
             // inhand damage + scaling
             bands = BaseAndScaling(nodes[17].InnerText.Trim());
-            god.SetInhandBaseDamage(bands[0]);
-            god.SetInhandBaseDamageIncreasePerLevel(bands[1]);
-            god.SetInhandScalingPercentage(bands[2]);
+            god.InhandDamage.SetBaseAndScaling(bands);
 
             // AA progression
             var progression = ParseProgression(nodes[18].InnerText.Trim());
-            god.SetProgressionDamageScaling((List<double>)progression[0]);
-            god.SetProgressionSpeedScaling((List<double>)progression[1]);
+            god.ProgressionDamageScaling = (List<double>)progression[0];
+            god.ProgressionSpeedScaling = (List<double>)progression[1];
 
             // physical protections + scaling
             bands = BaseAndScaling(nodes[19].InnerText.Trim());
-            god.SetPhysicalProtections(bands[0]);
-            god.SetPhysicalProtectionsIncreasePerLevel(bands[1]);
+            god.PhysicalProtections.SetBaseAndScaling(bands);
 
             // magical protections + scaling
             bands = BaseAndScaling(nodes[20].InnerText.Trim());
-            god.SetMagicalProtections(bands[0]);
-            god.SetMagicalProtectionsIncreasePerLevel(bands[1]);
+            god.MagicalProtections.SetBaseAndScaling(bands);
 
             // health regen + scaling
             bands = BaseAndScaling(nodes[21].InnerText.Trim());
-            god.SetHP5(bands[0]);
-            god.SetHP5IncreasePerLevel(bands[1]);
+            god.HP5.SetBaseAndScaling(bands);
             
             // mana regen + scaling
             bands = BaseAndScaling(nodes[22].InnerText.Trim());
-            god.SetMP5(bands[0]);
-            god.SetMP5IncreasePerLevel(bands[1]);
+            god.MP5.SetBaseAndScaling(bands);
             
             return god;
+        }
+
+        public List<IEntity> GetAllSmiteGodsAndStats()
+        {
+            var AllGods = GetAllGodNames();
+
+            Parallel.ForEach(AllGods, (currentGod) =>
+            {
+                try
+                {
+                    var s = new StatsGrabber();
+                    s.GetGodInfo(currentGod);
+                }
+                catch{/*Ignored*/}
+            });
+
+            return AllGods;
+        }
+
+        public GodCollection GetAllSmiteGodsAndStatsGodCollection()
+        {
+            var allGods = GetAllGodNames();
+
+            Parallel.ForEach(allGods, (currentGod) =>
+            {
+                try
+                {
+                    var s = new StatsGrabber();
+                    s.GetGodInfo(currentGod);
+                }
+                catch {/*Ignored*/}
+            });
+
+            return new GodCollection(allGods);
         }
     }
 }
